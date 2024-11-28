@@ -1,0 +1,135 @@
+from flask import Flask, render_template, request, Response, send_from_directory, jsonify
+import pandas as pd
+import os
+import uuid
+
+app = Flask(__name__, template_folder='templates')
+
+@app.route('/', methods = ['GET', 'POST'])
+def index():
+    if request.method == 'GET':
+        return render_template('index.html')
+    elif request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        if 'username' in request.form.keys() and 'password' in request.form.keys():
+            if username == 'hello' and password == 'world':
+                return 'Success'
+            else:
+                return 'Failure'
+
+@app.route('/file_upload', methods = ['POST'])
+def file_upload():
+    file = request.files.get('file')
+    if file.content_type == 'text/plain':
+        return file.read().decode()
+    elif file.content_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' or file.content_type == 'application/vnd.ms-excel':
+        df = pd.read_excel(file)
+        return df.to_html()
+
+@app.route('/convert_csv', methods = ['POST'])
+def convert_csv():
+    file = request.files.get('file')
+    df = pd.read_excel(file)
+    response = Response(
+        df.to_csv(),
+        mimetype='text/csv',
+        headers={
+            'Content-Disposition': 'attachment; filename=result.csv'
+        }
+    )
+    return response
+
+@app.route('/convert_csv_two', methods = ['POST'])
+def convert_csv_two():
+    file = request.files.get('file')
+    df = pd.read_excel(file)
+    if not os.path.exists('downloads'):
+        os.makedirs('downloads')
+    filename = f'{uuid.uuid4()}.csv'
+    df.to_csv(os.path.join('downloads', filename))
+    return render_template('download.html', filename=filename)
+
+@app.route('/download/<filename>')
+def download(filename):
+    return send_from_directory('downloads', filename, download_name='result.csv')
+
+@app.route('/handle_post', methods = ['POST'])
+def handle_post():
+    greeting = request.json.get('greeting')
+    name = request.json.get('name')
+    with open('file.txt', 'w') as f:
+        f.write(f'{greeting}, {name}')
+    return jsonify({'message': 'Successfully Written'})
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+
+
+index.html
+
+{% extends 'base.html' %}
+{% block title %} Index Page {% endblock %}
+
+{% block content %}
+  <h1>Hello World From HTML</h1>
+  <form method="POST" action="{{ url_for('index') }}">
+    <input type="text" name="username" placeholder="Username"><br>
+    <input type="password" name="password" placeholder="Password"><br>
+    <input type="submit" value="Login">
+  </form>
+
+  <h1>File Upload</h1>
+  <form method="POST" action="{{ url_for('file_upload') }}" enctype="multipart/form-data">
+    <input type="file" name="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, text/plain" required="required">
+    <input type="submit" value="Upload File">
+  </form>
+
+  <h1>Convert To CSV</h1>
+  <form method="POST" action="{{ url_for('convert_csv') }}" enctype="multipart/form-data">
+    <input type="file" name="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" required="required">
+    <input type="submit" value="Upload File">
+  </form>
+
+  <h1>Convert To CSV Two</h1>
+  <form method="POST" action="{{ url_for('convert_csv_two') }}" enctype="multipart/form-data">
+    <input type="file" name="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" required="required">
+    <input type="submit" value="Upload File">
+  </form>
+
+  <h1>JavaScript JSON Request</h1>
+  <button id="post_button">Send POST Request</button>
+  <script type="text/javascript">
+    const postButton = document.getElementById('post_button');
+    const jsonData = {name: 'Mohit', greeting: 'Hello'}
+    postButton.addEventListener('click', () => {
+      fetch('{{ url_for("handle_post") }}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8'
+        },
+        body: JSON.stringify(jsonData)
+      })
+        .then(response => response.json())
+        .then(data => console.log('Success: ', data))
+        .catch((error) => {
+          console.error('Error: ', error)
+      });
+    })
+  </script>
+{% endblock %}
+
+
+
+
+download.html
+
+{% extends 'base.html' %}
+{% block title %} Index Page {% endblock %}
+
+{% block content %}
+  <h1>Downloads</h1>
+  <a href="{{ url_for('download', filename=filename) }}"> Download File</a>
+{% endblock %}
