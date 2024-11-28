@@ -1,0 +1,144 @@
+run.py
+from app import create_app
+flask_app = create_app()
+
+if __name__ == '__main__':
+    flask_app.run(debug=True)
+
+
+app.py
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+
+db = SQLAlchemy()
+
+def create_app():
+    app = Flask(__name__, template_folder='templates')
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./testdb.db'
+    db.init_app(app)
+
+    from routes import register_routes
+    register_routes(app, db)
+
+    migrate = Migrate(app, db)
+    return app
+
+
+models.py
+from app import db
+
+class Person(db.Model):
+    __tablename__ = 'people'
+
+    pid = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Text, nullable=False)
+    age = db.Column(db.Integer)
+    job = db.Column(db.Text)
+
+    def __repr__(self):
+        return f'Person with name {self.name} and age {self.age} and job {self.job}'
+
+
+routes.py
+from flask import render_template, request
+from models import Person
+
+def register_routes(app, db):
+
+    @app.route('/', methods=['GET', 'POST'])
+    def index():
+        if request.method == 'GET':
+            people = Person.query.all()
+            return render_template('index.html', people=people)
+        elif request.method == 'POST':
+            name = request.form.get('name')
+            age = int(request.form.get('age'))
+            job = request.form.get('job')
+            person = Person(name=name, age=age, job=job)
+            db.session.add(person)
+            db.session.commit()
+
+            people = Person.query.all()
+            return render_template('index.html', people=people)
+
+    @app.route('/delete/<pid>', methods=['DELETE'])
+    def delete(pid):
+        Person.query.filter(Person.pid == pid).delete()
+        db.session.commit()
+        people = Person.query.all()
+        return render_template('index.html', people=people)
+
+    @app.route('/details/<pid>')
+    def details(pid):
+        person = Person.query.filter(Person.pid == pid).first()
+        return render_template('details.html', person=person)
+
+
+base.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Default{% endblock %}</title>
+</head>
+<body>
+    {% block content %}{% endblock %}
+</body>
+</html>
+
+
+
+index.html
+
+{% extends "base.html" %}
+{% block title %}Index{% endblock %}
+
+{% block content %}
+    <h1>Index Page</h1>
+    <ul>
+        {% for person in people %}
+            <li>{{ person }}<button onclick="deletePerson({{ person.pid }})">Delete</button><a href="{{ url_for('details', pid=person.pid )}}">Details</a></li>
+        {% endfor %}
+    </ul>
+    <h3>New Person</h3>
+    <form action="{{ url_for('index') }}" method="POST">
+        <input type="text" name="name" placeholder="Name" required="required"><br>
+        <input type="number" name="age" placeholder="Age"><br>
+        <input type="text" name="job" placeholder="Job"><br>
+        <input type="submit" value="Create">
+    </form>
+    <script type="text/javascript">
+        function deletePerson(pid) {
+            fetch('{{ url_for('delete', pid = pid) }}' + pid, {
+                method: 'DELETE'
+            }).then(response => {
+                if(response.ok)
+                    window.location.reload();
+                else
+                    console.error('Failed to delete item with pid: ', pid)
+            })
+            .catch(error => {
+                console.error('Error during fetching: ', error)
+            })
+        }
+    </script>
+{% endblock %}
+
+
+
+details.html
+
+{% extends "base.html" %}
+{% block title %}Index{% endblock %}
+
+{% block content %}
+    <h1>Person Details</h1>
+    <ul>
+        <li>{{ person.pid }}</li>
+        <li>{{ person.name }}</li>
+        <li>{{ person.age }}</li>
+        <li>{{ person.job }}</li>
+    </ul>
+{% endblock %}
