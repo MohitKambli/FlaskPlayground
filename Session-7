@@ -1,0 +1,159 @@
+app.py
+
+from flask import Flask, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from flask_login import LoginManager
+from flask_bcrypt import Bcrypt
+
+db = SQLAlchemy()
+
+def create_app():
+    app = Flask(__name__, template_folder='templates')
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./testdb.db'
+    app.secret_key = 'SOME KEY'
+
+    db.init_app(app)
+
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+
+    from models import User
+    @login_manager.user_loader
+    def load_user(uid):
+        return User.query.get(uid)
+
+    @login_manager.unauthorized_handler
+    def unauthorized_callback():
+        return redirect(url_for('index'))
+
+    bcrypt = Bcrypt(app)
+
+    from routes import register_routes
+    register_routes(app, db, bcrypt)
+
+    migrate = Migrate(app, db)
+    return app
+
+
+models.py
+
+from app import db
+from flask_login import UserMixin
+
+class User(db.Model, UserMixin):
+    __tablename__ = 'users'
+    uid = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String, nullable=False)
+    password = db.Column(db.String, nullable=False)
+    role = db.Column(db.String)
+    description = db.Column(db.String)
+
+    def __repr__(self):
+        return f'<User: {self.username}, Role: {self.role}>'
+
+    def get_id(self):
+        return self.uid
+
+
+
+routes.py
+
+from flask import render_template, request, redirect, url_for
+from models import User
+from flask_login import login_user, logout_user, current_user, login_required
+
+def register_routes(app, db, bcrypt):
+
+    @app.route('/', methods=['GET'])
+    def index():
+        return render_template('index.html')
+
+    @app.route('/login', methods=['GET', 'POST'])
+    def login():
+        if request.method == 'GET':
+            return render_template('login.html')
+        elif request.method == 'POST':
+            username = request.form.get('username')
+            password = request.form.get('password')
+            user = User.query.filter(User.username == username).first()
+            if bcrypt.check_password_hash(user.password, password):
+                login_user(user)
+                return redirect(url_for('index'))
+            else:
+                return "Failed"
+
+    @app.route('/signup', methods=['GET', 'POST'])
+    def signup():
+        if request.method == 'GET':
+            return render_template('signup.html')
+        elif request.method == 'POST':
+            username = request.form.get('username')
+            password = request.form.get('password')
+            hashed_password = bcrypt.generate_password_hash(password)
+            user = User(username=username, password=hashed_password)
+            db.session.add(user)
+            db.session.commit()
+            return redirect(url_for('index'))
+
+    @app.route('/logout')
+    def logout():
+        logout_user()
+        return redirect(url_for('index'))
+
+    @app.route('/secret')
+    @login_required
+    def secret():
+        return 'My Secret Message'
+
+
+index.html
+
+{% extends "base.html" %}
+{% block title %}Index{% endblock %}
+
+{% block content %}
+    <h1>Index Page</h1>
+    {% if current_user.is_authenticated %}
+        <h3>Hello {{ current_user.username }}</h3>
+    {% else %}
+        <h3>Hello</h3>
+    {% endif %}
+
+    <a href="{{url_for('signup')}}">SignUp</a>
+    <a href="{{url_for('login')}}">Login</a>
+    <a href="{{url_for('logout')}}">Logout</a>
+    <a href="{{url_for('secret')}}">Secret</a>
+{% endblock %}
+
+
+
+login.html
+
+{% extends "base.html" %}
+{% block title %}Index{% endblock %}
+
+{% block content %}
+    <h1>Login Page</h1>
+    <form action="{{ url_for('login') }}" method="POST">
+        <input type="text" name="username" placeholder="Username" required="required"><br>
+        <input type="password" name="password" placeholder="Password" required="required"><br>
+        <input type="submit" value="Login">
+    </form>
+{% endblock %}
+
+
+
+signup.html
+
+{% extends "base.html" %}
+{% block title %}Index{% endblock %}
+
+{% block content %}
+    <h1>Signup Page</h1>
+    <form action="{{ url_for('signup') }}" method="POST">
+        <input type="text" name="username" placeholder="Username" required="required"><br>
+        <input type="password" name="password" placeholder="Password" required="required"><br>
+        <input type="submit" value="Sign Up">
+    </form>
+{% endblock %}
