@@ -1,0 +1,89 @@
+from flask import Flask, render_template, redirect, url_for
+
+app = Flask(__name__, template_folder='templates')
+
+@app.route('/')
+def index():
+    my_list = [10, 20, 30, 40, 50]
+    return render_template('index.html', my_list = my_list)
+
+
+@app.route('/other')
+def other():
+    some_text = 'Some Text'
+    return render_template('other.html', some_text = some_text)
+
+@app.route('/redirect_endpoint')
+def redirect_endpoint():
+    return redirect(url_for('other'))
+
+@app.template_filter('reverse_string')
+def reverse_string(s):
+    return s[::-1]
+
+@app.template_filter('repeat')
+def repeat(s, times=2):
+    return s * times
+
+@app.template_filter('alternate_case')
+def alternate_case(s):
+    return ''.join([c.upper() if i % 2 == 0 else c.lower() for i,c in enumerate(s)])
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+
+other.html
+{% extends 'base.html' %}
+{% block title %} Index Page {% endblock %}
+{% block content %}
+  <h1>Filters</h1>
+  <p>{{ some_text|upper }}</p>
+  <p>{{ some_text|lower }}</p>
+  <p>{{ some_text|title }}</p>
+  <p>{{ some_text|replace('l', 'L') }}</p>
+  <p>{{ some_text|reverse_string }}</p>
+  <p>{{ some_text|repeat }}</p>
+  <p>{{ some_text|repeat(5) }}</p>
+  <p>{{ some_text|alternate_case }}</p>
+{% endblock %}
+
+
+index.html
+{% extends 'base.html' %}
+{% block title %} Index Page {% endblock %}
+{% block content %}
+  <h1>Hello World From HTML</h1>
+  <ul>
+    {% for item in my_list %}
+      <li>{{ item }}</li>
+    {% endfor %}
+  </ul>
+  <p>{{ my_list }}</p>
+  <a href="{{ url_for('other')}}">Other</a>
+{% endblock %}
+
+
+base.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %} Default Value {% endblock %}</title>
+</head>
+<body>
+  <p>This will always be here</p>
+  {% block content %} {% endblock %}
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
