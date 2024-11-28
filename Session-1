@@ -1,0 +1,34 @@
+from flask import Flask, request, make_response
+
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return 'Hello World'
+
+@app.route('/hello')        # http://127.0.0.1:5000/hello
+def hello():
+    response = make_response('Hello World')
+    response.status_code = 202
+    response.headers['content-type'] = 'text/plain'
+    return response
+
+@app.route('/greet/<name>')     # http://127.0.0.1:5000/greet/World
+def greet(name):
+    return f'Hello {name}'
+
+@app.route('/add/<int:num1>/<int:num2>')    # http://127.0.0.1:5000/add/10/20
+def add(num1, num2):
+    return f'{num1} + {num2} = {num1 + num2}'
+
+@app.route('/handle_url_params')    # http://127.0.0.1:5000/handle_url_params?name=Mohit&greeting=Hello
+def handle_params():
+    if 'greeting' in request.args.keys() and 'name' in request.args.keys():
+        greeting = request.args.get('greeting')
+        name = request.args.get('name')
+        return f'{greeting}, {name}'
+    else:
+        return 'Some parameters are missing'
+
+if __name__ == '__main__':
+    app.run(debug=True)
