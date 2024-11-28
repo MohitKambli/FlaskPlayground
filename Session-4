@@ -1,0 +1,61 @@
+from flask import Flask, render_template
+
+app = Flask(
+    __name__,
+    template_folder='templates',
+    static_folder='static',
+    static_url_path='/'
+)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+hello.js
+
+window.onload = function() {
+    setTimeout(function() {
+        alert('Hello World');
+    }, 5000)
+}
+
+
+style.css
+
+.special {
+    color: red;
+    font-size: 18pt;
+}
+
+
+base.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %} Default Value {% endblock %}</title>
+  <link rel="stylesheet" type="text/css" href="/css/style.css">
+</head>
+<body>
+  <p>This will always be here</p>
+  {% block content %} {% endblock %}
+</body>
+</html>
+
+
+index.html
+
+{% extends 'base.html' %}
+{% block title %} Index Page {% endblock %}
+
+{% block content %}
+  <h1>Hello World From HTML</h1>
+  <img src="/img/marin_kitagawa.png" alt="Text" />
+  <p class="special">Hello</p>
+  <script src="/js/hello.js"></script>
+{% endblock %}
