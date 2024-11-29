@@ -111,11 +111,11 @@ index.html
     </form>
     <script type="text/javascript">
         function deletePerson(pid) {
-            fetch('{{ url_for('delete', pid = pid) }}' + pid, {
+            fetch('{{ url_for("delete", pid = pid) }}' + pid, {
                 method: 'DELETE'
             }).then(response => {
                 if(response.ok)
-                    window.location.reload();
+                    window.location.assign('/');
                 else
                     console.error('Failed to delete item with pid: ', pid)
             })
