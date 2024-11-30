@@ -1,0 +1,86 @@
+from sqlalchemy import create_engine, ForeignKey, Column, String, Integer, CHAR
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+Base = declarative_base()
+
+class Person(Base):
+    __tablename__ = 'people'
+
+    ssn = Column("ssn", Integer, primary_key=True)
+    first_name = Column("first_name", String)
+    last_name = Column("last_name", String)
+    gender = Column("gender", CHAR)
+    age = Column("age", Integer)
+
+    def __init__(self, ssn, first_name, last_name, gender, age):
+        self.ssn = ssn
+        self.first_name = first_name
+        self.last_name = last_name
+        self.gender = gender
+        self.age = age
+
+    def __repr__(self):
+        return f"({self.ssn}) {self.first_name} {self.last_name} ({self.gender}, {self.age})"
+
+class Thing(Base):
+    __tablename__ = 'things'
+
+    tid = Column('tid', Integer, primary_key=True)
+    description = Column('description', String)
+    owner = Column(Integer, ForeignKey('people.ssn'))
+
+    def __init__(self, tid, description, owner):
+        self.tid = tid
+        self.description = description
+        self.owner = owner
+    def __repr__(self):
+        return f"({self.tid}) {self.description} owned by ({self.owner})"
+
+
+postgres_url = 'sqlite:///./testdb.db'
+engine = create_engine(postgres_url, echo=True)
+Base.metadata.create_all(bind = engine)
+
+Session = sessionmaker(bind=engine)
+session = Session()
+
+p1 = Person(12312, 'Mohit', 'Kambli', 'M', 27)
+p2 = Person(12313, 'Hrishikesh', 'Anerao', 'M', 27)
+p3 = Person(12314, 'Ameya', 'Kale', 'M', 26)
+
+session.add(p1)
+session.add(p2)
+session.add(p3)
+session.commit()
+
+t1 = Thing(1, 'Car', p1.ssn)
+t2 = Thing(2, 'Laptop', p1.ssn)
+t3 = Thing(3, 'PS5', p2.ssn)
+t4 = Thing(4, 'Tool', p3.ssn)
+t5 = Thing(5, 'Book', p3.ssn)
+session.add(t1)
+session.add(t2)
+session.add(t3)
+session.add(t4)
+session.add(t5)
+session.commit()
+
+people = session.query(Person).all()
+print(people)
+
+results = session.query(Person).filter(Person.last_name == 'Anerao')
+for result in results:
+    print(result)
+
+age_results = session.query(Person).filter(Person.age > 26)
+for result in age_results:
+    print(result)
+
+in_results = session.query(Person).filter(Person.first_name.in_(['Mohit', 'Hrishikesh']))
+for result in in_results:
+    print(result)
+
+complex_results = session.query(Thing, Person).filter(Thing.owner == Person.ssn).filter(Person.first_name == 'Mohit').all()
+for result in complex_results:
+    print(result)
