@@ -239,7 +239,8 @@ else:
 '''
 
 '''
-url = 'https://api.chess.com/pub/player/hikaru'
+#url = 'https://api.chess.com/pub/player/hikaru'
+url = 'https://api.chess.com/pub/streamers'
 headers = {
     'User-Agent': 'Test/1.0',
     'Accept' : 'application/json',
@@ -254,17 +255,18 @@ except Exception as e:
     data = []
 
 if data:
-    print(data)
+    df = pd.DataFrame(data['streamers'])
+    print(pd.DataFrame(df['platforms']))
 else:
     print('No Data Found')
 '''
 
-'''
+
 omdb_api_key = os.getenv('OMDB_API_KEY')
 url = f'http://www.omdbapi.com/?t=Mission+Impossible&apikey={omdb_api_key}'
 headers = {
-    'Content-Type': 'application/json',
-    "User-Agent": "Test/1.0"
+    "User-Agent": "Test/1.0",
+    'Content-Type': 'application/json'
 }
 
 try:
@@ -282,6 +284,5 @@ if data:
     print(df)
 else:
     print('No Data Found')
-'''
 
 
