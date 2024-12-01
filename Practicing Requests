@@ -240,7 +240,9 @@ else:
 
 '''
 #url = 'https://api.chess.com/pub/player/hikaru'
-url = 'https://api.chess.com/pub/streamers'
+#url = 'https://api.chess.com/pub/streamers'
+#url = 'https://api.chess.com/pub/player/hikaru/games/2023/12'
+url = 'https://api.chess.com/pub/player/hikaru/stats'
 headers = {
     'User-Agent': 'Test/1.0',
     'Accept' : 'application/json',
@@ -255,13 +257,37 @@ except Exception as e:
     data = []
 
 if data:
-    df = pd.DataFrame(data['streamers'])
-    print(pd.DataFrame(df['platforms']))
+    # Solution
+    games = data['games']
+    opponents = []
+    for game in games:
+        cell = []
+        if game['white']['username'] == 'hikaru':
+            cell.append(game['black']['result'])
+            cell.append(game['black']['username'])
+        else:
+            cell.append(game['white']['result'])
+            cell.append(game['white']['username'])
+        opponents.append(cell)
+    opponents.sort(key=lambda x: x[1], reverse=True)
+    print(opponents)
+
+
+    # Solution
+    record = data['chess_daily']['record']
+    win = record['win']
+    loss = record['loss']
+    draw = record['draw']
+    total = win + loss + draw
+    print(f"Win: {((win * 100) / total)}%")
+    print(f"Loss: {((loss * 100) / total)}%")
+    print(f"Draw: {((draw * 100) / total)}%")
+
 else:
     print('No Data Found')
 '''
 
-
+'''
 omdb_api_key = os.getenv('OMDB_API_KEY')
 url = f'http://www.omdbapi.com/?t=Mission+Impossible&apikey={omdb_api_key}'
 headers = {
@@ -284,5 +310,25 @@ if data:
     print(df)
 else:
     print('No Data Found')
+'''
 
+'''
+url = 'https://api.chess.com/pub/club/chess-com-developer-community/members'
+headers = {
+    'User-Agent': 'Test/1.0',
+    'Content-Type': 'application/json'
+}
+try:
+    response = requests.get(url, headers = headers)
+    response.raise_for_status()
+    data = response.json()
+except Exception as e:
+    print('Exception: e')
+    data = []
+if data:
+    df = pd.DataFrame(data['weekly'])
+    print(df)
+else:
+    print('No Data Found')
+'''
 
