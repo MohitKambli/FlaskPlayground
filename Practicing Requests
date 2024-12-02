@@ -326,8 +326,180 @@ except Exception as e:
     print('Exception: e')
     data = []
 if data:
-    df = pd.DataFrame(data['weekly'])
+    user_names = []
+    weekly_data = data['weekly']
+    ans = []
+    for entry in weekly_data:
+        user_name = entry['username']
+        row = []
+        url_2 = f'https://api.chess.com/pub/player/{user_name}/stats'
+        try:
+            response = requests.get(url_2, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            row.append(user_name)
+            row.append(data['chess_daily']['best']['rating'])
+            ans.append(row)
+        except Exception as e:
+            print('Exception: ', e)
+            data = []
+else:
+    print('No Data Found')
+
+ans.sort(key = lambda x : x[1])
+print(ans)
+'''
+
+'''
+url = 'https://api.chess.com/pub/leaderboards'
+headers = {
+    'User-Agent': 'Test/1.0',
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+}
+try:
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    data = response.json()
+except Exception as e:
+    print('Exception: ', e)
+    data = []
+
+if data:
+    daily_data = data['daily']
+    df = pd.DataFrame(daily_data)
+    ans_1_df = df[['score', 'draw_count', 'win_count']].copy()
+    ans_1_df.sort_values(['score', 'draw_count'], ascending=[True, False], inplace=True)
+    print(ans_1_df)
+
+    final_data = []
+    for obj in daily_data:
+        final_data.append([obj['score'], obj['draw_count'], obj['win_count']])
+    final_data.sort(key=lambda x: (x[0], -x[1]))
+    print(final_data)
+
+else:
+    print('Data Not Found')
+'''
+
+'''
+url = 'https://api.chess.com/pub/player/hikaru'
+headers = {
+    'User-Agent': 'Test/1.0',
+    'Content-Type': 'application/json'
+}
+
+try:
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    data = response.json()
+except Exception as e:
+    print("Exception: ", e)
+    data = []
+
+if data:
+    df = pd.DataFrame(data)
+    ans = df[['username','name','location','title', 'followers']]
+    print(ans)
+else:
+    print('No Data Found')
+'''
+
+'''
+url = 'https://api.chess.com/pub/player/erik/stats'
+headers = {
+    'User-Agent': 'Test/1.0',
+    'Content-Type':'application.json'
+}
+try:
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    data = response.json()
+except Exception as e:
+    print('Error: ',e)
+
+if data:
+    count = 0
+    for key in data:
+        if type(data[key]) == dict and 'record' in data[key]:
+            count += data[key]['record']['win'] + data[key]['record']['draw'] + data[key]['record']['loss']
+    print(f'Count: {count}')
+else:
+    print('No Data Found')
+'''
+
+'''
+url = 'https://api.chess.com/pub/leaderboards'
+headers = {
+    'User-Agent': 'Task/1.0',
+    'Content-Type': 'application/json'
+}
+
+try:
+    response = requests.get(url, headers = headers)
+    response.raise_for_status()
+    data = response.json()
+except Exception as e:
+    print('Exception: ', e)
+    data = []
+
+if data:
+    blitz_data = data['live_blitz']
+    ans = []
+    for i in range(min(10, len(blitz_data))):
+        ans.append([blitz_data[i]['username'], blitz_data[i]['name'], blitz_data[i]['score'], blitz_data[i]['title'], blitz_data[i]['rank']])
+    df = pd.DataFrame(ans)
+    df.columns = ['username', 'name', 'score', 'title', 'rank']
     print(df)
+
+else:
+    print('No Data Found')
+'''
+
+'''
+url = 'https://api.chess.com/pub/club/chess-com-developer-community/members'
+headers = {
+    'Content-Type': 'application/json',
+    'User-Agent': 'Test/1.0'
+}
+
+try:
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    data = response.json()
+except Exception as e:
+    print(f'Error: {e}')
+    data = []
+
+if data:
+    weekly_data = data['weekly']
+    df = pd.DataFrame(weekly_data)
+    print(df['username'])
+else:
+    print('No Data Found')
+'''
+
+'''
+url = 'https://api.chess.com/pub/player/hikaru/games'
+headers = {
+    'Content-Type': 'application/json',
+    'User-Agent': 'Test/1.0'
+}
+try:
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    data = response.json()
+except Exception as e:
+    print(f'Exception: {e}')
+    data = []
+
+if data:
+    games_data = data['games']
+    ans = []
+    for game in games_data:
+        if game['time_class'] == 'daily':
+            ans.append(game)
+    print(ans)
 else:
     print('No Data Found')
 '''
