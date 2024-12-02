@@ -504,3 +504,31 @@ else:
     print('No Data Found')
 '''
 
+'''
+url = 'https://api.chess.com/pub/player/hikaru/matches'
+headers = {
+    'Content-Type': 'application/json',
+    'User-Agent': 'Test/1.0'
+}
+
+try:
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    data = response.json()
+except Exception as e:
+    print(f'Exception: {e}')
+    data = []
+
+if data:
+    finished_data = data['finished']
+    black, white = 0, 0
+    for entry in finished_data:
+        if entry['results']['played_as_white'] == 'win':
+            white += 1
+        elif entry['results']['played_as_black'] == 'win':
+            black += 1
+    print(f'White Win Rate: {(white/(white + black)) * 100}')
+    print(f'Black Win Rate: {(black/(white + black)) * 100}')
+else:
+    print('No Data Found')
+'''
