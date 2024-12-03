@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import requests
 import pandas as pd
+from datetime import datetime
 
 '''
 url = 'https://jsonplaceholder.typicode.com/posts'
@@ -525,10 +526,124 @@ if data:
     for entry in finished_data:
         if entry['results']['played_as_white'] == 'win':
             white += 1
-        elif entry['results']['played_as_black'] == 'win':
+        if entry['results']['played_as_black'] == 'win':
             black += 1
-    print(f'White Win Rate: {(white/(white + black)) * 100}')
-    print(f'Black Win Rate: {(black/(white + black)) * 100}')
+    try:
+        print(f'White Win Rate: {(white/(white + black)) * 100}')
+        print(f'Black Win Rate: {(black/(white + black)) * 100}')
+    except ZeroDivisionError as e:
+        print('No Matches Won With Either Black Or White')
 else:
     print('No Data Found')
 '''
+
+'''
+url_1 = 'https://api.chess.com/pub/player/erik/games/2023/01'
+url_2 = 'https://api.chess.com/pub/player/erik/games/2024/01'
+headers = {
+    'User-Agent': 'Test/1.0',
+    'Content-Type': 'application.json',
+    'Accept': 'application/json'
+}
+
+date_obj = datetime.fromtimestamp(1704139243)
+print(date_obj)
+print(date_obj.day)
+print(date_obj.month)
+print(date_obj.year)
+
+try:
+    response_1 = requests.get(url_1, headers=headers)
+    response_1.raise_for_status()
+    data_1 = response_1.json()
+except Exception as e:
+    print(f'Exception: {e}')
+    data_1 = []
+
+try:
+    response_2 = requests.get(url_2, headers=headers)
+    response_2.raise_for_status()
+    data_2 = response_2.json()
+except Exception as e:
+    print(f'Exception: {e}')
+    data_2 = []
+
+# ans = []
+# ids = [obj['uuid'] for obj in data_1['games']]
+# if data_1 and data_2:
+#     for obj in data_2['games']:
+#         if obj['uuid'] not in ids:
+#             ans.append(obj)
+# print(len(data_1['games']), len(data_2['games']), len(ans))
+'''
+
+'''
+months = ['01','02','03','04','05','06','07','08','09','10','11','12']
+username = 'erik'
+url = f'https://api.chess.com/pub/player/{username}/games/2024'
+headers = {
+    'User-Agent': 'Test/1.0',
+    'Content-Type': '*/*'
+}
+wins, defeats, total_games = 0, 0, 0
+try:
+    for month in months:
+        response = requests.get(f'{url}/{month}', headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        for game in data['games']:
+            if (username == game['white']['username'] and game['white']['result'] == 'win') or (username == game['black']['username'] and game['black']['result'] == 'win'):
+                wins += 1
+        for game in data['games']:
+            if (username == game['white']['username'] and game['black']['result'] == 'win') or (username == game['black']['username'] and game['white']['result'] == 'win'):
+                defeats += 1
+            total_games += 1
+    stats = {'Wins': wins, 'Defeats': defeats, 'Draws': total_games - (wins + defeats)}
+    df = pd.DataFrame([stats])
+    print(df)
+
+except Exception as e:
+    print('Exception: ', e)
+    data = []
+'''
+
+'''
+arr = [[20,30,40]]
+df = pd.DataFrame(arr, columns=['Wins', 'Defeats', 'Draws'])
+print(df)
+'''
+
+'''
+months = ['01','02','03','04','05','06','07','08','09','10','11','12']
+username = 'erik'
+url = f'https://api.chess.com/pub/player/{username}/games/2024'
+headers = {
+    'User-Agent': 'Test/1.0',
+    'Content-Type': '*/*'
+}
+opponents_competing_count = {}
+try:
+    for month in months:
+        response = requests.get(f'{url}/{month}', headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        for game in data['games']:
+            if username == game['white']['username']:
+                opponent = game['black']['username']
+                if opponent not in opponents_competing_count:
+                    opponents_competing_count[opponent] = 0
+                opponents_competing_count[opponent] += 1
+    sorted_opponents_competing_count = dict(sorted(opponents_competing_count.items(), key=lambda x: x[1], reverse=True))
+    temp = []
+    for item in sorted_opponents_competing_count.items():
+        temp.append(item)
+    df = pd.DataFrame(temp, columns=['usernames', 'count'])
+    print(df.head(5))
+
+except Exception as e:
+    print('Exception: ', e)
+    data = []
+'''
+
+url = 'https://www.chess.com/openings/Three-Knights-Opening-Winawer-Defense'
+print(url.split('openings/')[1])
