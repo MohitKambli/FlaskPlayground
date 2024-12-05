@@ -25,42 +25,47 @@ class Todo(db.Model):
 app.py
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_migrate import Migrate
 from database import db
+from flask_migrate import Migrate
 from models import Todo
 import requests
+import redis
+import json
 
 app = Flask(__name__)
 CORS(app)
 
-# PostgreSQL Database Configuration
-postgres_db = ''
-postgres_user = ''
-postgres_password = ''
-postgres_url = f'postgresql://{postgres_user}:{postgres_password}@localhost:5432/{postgres_db}'
-app.config['SQLALCHEMY_DATABASE_URI'] = postgres_url
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+postgres_db = 'postgres'
+postgres_user = 'postgres'
+postgres_password = 'Euphie017119#'
+postres_url = f'postgresql://{postgres_user}:{postgres_password}@localhost:5432/{postgres_db}'
+app.config['SQLALCHEMY_DATABASE_URI'] = postres_url
 
-# Initialize SQLAlchemy and Flask-Migrate
+WEATHER_API_KEY = ''
+
+redis_client = redis.Redis(
+    host='',
+    port=,
+    password=''
+)
+
 db.init_app(app)
-migrate = Migrate(app, db)  # Enable migrations
+migrate = Migrate(app, db)
 
-# Routes
-
-@app.route('/todos', methods=['GET'])
+@app.route('/todos', methods = ['GET'])
 def get_todos():
     todos = Todo.query.all()
     return jsonify([todo.to_dict() for todo in todos]), 200
 
-@app.route('/todos/add', methods=['POST'])
+@app.route('/todos/add', methods = ['POST'])
 def add_todo():
     data = request.json
-    new_todo = Todo(description=data['description'])
+    new_todo = Todo(data['description'])
     db.session.add(new_todo)
     db.session.commit()
     return jsonify(new_todo.to_dict()), 201
 
-@app.route('/todos/update/<int:todo_id>', methods=['PUT'])
+@app.route('/todos/update/<int:todo_id>', methods = ['PUT'])
 def update_todo(todo_id):
     data = request.json
     todo = Todo.query.get_or_404(todo_id)
@@ -71,28 +76,28 @@ def update_todo(todo_id):
     db.session.commit()
     return jsonify(todo.to_dict()), 200
 
-@app.route('/todos/delete/<int:todo_id>', methods=['DELETE'])
+@app.route('/todos/delete/<int:todo_id>', methods = ['DELETE'])
 def delete_todo(todo_id):
+    data = request.json
     todo = Todo.query.get_or_404(todo_id)
     db.session.delete(todo)
     db.session.commit()
-    return jsonify({'message': 'Todo Deleted Successfully'}), 200
+    return jsonify({'message': 'Todo Deleted Sucessfully'}), 200
 
-@app.route('/')
-def index():
+@app.route('/weather/<city>')
+def find_weather(city):
+    cache_key = f"{city}"
+    cached_data = redis_client.get(cache_key)
+    if cached_data:
+        return jsonify(json.loads(cached_data))
     headers = {
         'User-Agent': 'FlaskTest/1.0',
         'Content-Type': 'application/json'
     }
-    url = 'https://jsonplaceholder.typicode.com/posts'
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    data = response.json()
-    return data
-
-@app.route('/add/<int:a>/<int:b>')
-def add(a, b):
-    return f'{a + b}'
+    url = f'http://api.weatherapi.com/v1/current.json?q={city}&key={WEATHER_API_KEY}'
+    response = requests.get(url, headers = headers)
+    redis_client.setex(cache_key, 300, response.text)
+    return response.json()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug = True)
