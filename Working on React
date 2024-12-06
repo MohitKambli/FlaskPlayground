@@ -1,72 +1,68 @@
-import {useState, useEffect} from 'react'
+import { useState, useEffect } from "react";
 
-function Todo() {
+const Todo = () => {
     const [todos, setTodos] = useState([]);
-    const [newTodo, setNewTodo] = useState('');
-    const [editingTodoId, setEditingTodoId] = useState(null);
-    const [editedDescription, setEditedDescription] = useState('');
+    const [newDescription, setNewDescription] = useState('');
+    const [editingId, setEditingId] = useState(null);
+    const [editDescription, setEditDescription] = useState('');
 
-    const baseUrl = 'http://127.0.0.1:5000/todos';
-    async function fetchTodos() {
+    const baseUrl = 'http://127.0.0.1:5000';
+
+    const fetchTodos = async () =>  {
         try {
-            const response = await fetch(baseUrl, {
+            const response = await fetch(`${baseUrl}/todos`, {
                 method: 'GET',
-                headers: { "Content-Type": "application/json" }
-            });
-            if(response.ok) {
-                const data = await response.json();
-                setTodos(data);
-                console.log(data);
-            } else {
-                console.log('Error while fetching todos');
-            }
-        } catch(e) {
+                headers: {"Content-Type": "application/json"}
+            })
+            const data = await response.json();
+            setTodos(data);
+            console.log(data);
+        } catch (e) {
             console.log('Error: ', e);
         }
     }
     useEffect(() => {
         fetchTodos();
     }, []);
+
     const addTodo = async () => {
-        if(newTodo.trim() === '')
-            return;
         try {
-            const response = await fetch(`${baseUrl}/add`, {
+            const response = await fetch(`${baseUrl}/todos/add`, {
                 method: 'POST',
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({description: newTodo})
-            })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({"description": newDescription})
+            });
             const data = await response.json();
             setTodos([...todos, data]);
-            setNewTodo("");
+            setNewDescription("");
         } catch(e) {
-            console.log('Error: ', e);
+            console.log("Error: ", e);
         }
     }
+
     const deleteTodo = async (id) => {
         try {
-            const response = await fetch(`${baseUrl}/delete/${id}`, {
+            const response = await fetch(`${baseUrl}/todos/delete/${id}`, {
                 method: 'DELETE',
-                headers: { "Content-Type": "application/json" }
-            })
+                headers: {"Content-Type": "application/json"},
+            });
             setTodos(todos.filter((todo) => todo.tid !== id));
         } catch(e) {
             console.log('Error: ', e);
         }
     }
+
     const updateTodo = async (id) => {
-        if(editedDescription.trim() === '')
-            return;
         try {
-            const response = await fetch(`${baseUrl}/update/${id}`, {
+            const response = await fetch(`${baseUrl}/todos/update/${id}`, {
                 method: 'PUT',
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({description: editedDescription})
-            })
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({"description": editDescription})
+            });
             const data = await response.json();
-            setTodos(todos.map((todo) => (todo.tid === id ? data : todo)));
-            setEditingTodoId(null);
-            setEditedDescription('');
+            setTodos(todos.map((todo) => todo.tid === id ? data : todo));
+            setEditDescription("");
+            setEditingId(null);
         } catch(e) {
             console.log('Error: ', e);
         }
@@ -74,16 +70,15 @@ function Todo() {
 
     return (
         <div>
-            <h1>Todo-List</h1>
             <div>
                 <input 
-                    type='text' 
-                    value={newTodo} 
-                    placeholder='Enter a new todo' 
-                    onChange={(e) => setNewTodo(e.target.value)}
+                    type='text'
+                    value={newDescription}
+                    placeholder='Enter New Todo'
+                    onChange={(e) => setNewDescription(e.target.value)}
                 />
                 <button onClick={addTodo}>
-                    Add
+                    Add Todo
                 </button>
             </div>
             <ul>
@@ -91,40 +86,24 @@ function Todo() {
                     todos.map((todo) => (
                         <li key={todo.tid}>
                             {
-                                editingTodoId === todo.tid ? (
+                                editingId === todo.tid ? (
                                     <div>
                                         <input 
                                             type="text"
-                                            value={editedDescription}
-                                            onChange={(e) => setEditedDescription(e.target.value)}
+                                            value={editDescription}
+                                            onChange={(e) => setEditDescription(e.target.value)}
                                         />
-                                        <button
-                                            onClick={() => updateTodo(todo.tid)}
-                                        >
-                                            Save
-                                        </button>
-                                        <button
-                                            onClick={() => setEditingTodoId(null)}
-                                        >
-                                            Cancel
-                                        </button>
+                                        <button onClick={() => updateTodo(todo.tid)}>Save</button>
+                                        <button onClick={() => setEditingId(null)}>Cancel</button>
                                     </div>
                                 ) : (
                                     <div>
                                         <span>{todo.description}</span>
-                                        <button
-                                            onClick={() => {
-                                                setEditingTodoId(todo.tid);
-                                                setEditedDescription(todo.description);
-                                            }}
-                                        >
-                                            Edit
-                                        </button>
-                                        <button
-                                            onClick={() => deleteTodo(todo.tid)}
-                                        >
-                                            Delete
-                                        </button>
+                                        <button onClick={() => {
+                                            setEditingId(todo.tid);
+                                            setEditDescription(todo.description);
+                                        }}>Update</button>
+                                        <button onClick={() => deleteTodo(todo.tid)}>Delete</button>
                                     </div>
                                 )
                             }
@@ -135,4 +114,5 @@ function Todo() {
         </div>
     );
 }
+
 export default Todo;
