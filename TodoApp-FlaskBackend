@@ -35,19 +35,22 @@ import json
 app = Flask(__name__)
 CORS(app)
 
-postgres_db = ''
-postgres_user = ''
-postgres_password = ''
-postres_url = f''
+postgres_db = 'postgres'
+postgres_user = 'postgres'
+postgres_password = 'Euphie017119#'
+postres_url = f'postgresql://{postgres_user}:{postgres_password}@localhost:5432/{postgres_db}'
 app.config['SQLALCHEMY_DATABASE_URI'] = postres_url
 
-WEATHER_API_KEY = ''
+WEATHER_API_KEY = '98037c962893437c82c34421240512'
 
 redis_client = redis.Redis(
-    host='',
-    port=,
-    password=''
+    host='redis-12367.c281.us-east-1-2.ec2.redns.redis-cloud.com',
+    port=12367,
+    password='cniChB2L7FwQ0zSchvzixuXZorJQaZmM'
 )
+
+board = [""] * 9
+player = 'X'
 
 db.init_app(app)
 migrate = Migrate(app, db)
@@ -78,14 +81,13 @@ def update_todo(todo_id):
 
 @app.route('/todos/delete/<int:todo_id>', methods = ['DELETE'])
 def delete_todo(todo_id):
-    data = request.json
     todo = Todo.query.get_or_404(todo_id)
     db.session.delete(todo)
     db.session.commit()
     return jsonify({'message': 'Todo Deleted Sucessfully'}), 200
 
-@app.route('/weather/<city>')
-def find_weather(city):
+@app.route('/weather/<city>/<api_key>')
+def find_weather(city, api_key):
     cache_key = f"{city}"
     cached_data = redis_client.get(cache_key)
     if cached_data:
@@ -94,10 +96,41 @@ def find_weather(city):
         'User-Agent': 'FlaskTest/1.0',
         'Content-Type': 'application/json'
     }
-    url = f'http://api.weatherapi.com/v1/current.json?q={city}&key={WEATHER_API_KEY}'
+    # url = f'http://api.weatherapi.com/v1/current.json?q={city}&key={WEATHER_API_KEY}'
+    url = f'http://api.weatherapi.com/v1/current.json?q={city}&key={api_key}'
     response = requests.get(url, headers = headers)
     redis_client.setex(cache_key, 300, response.text)
     return response.json()
+
+@app.route('/move', methods=['POST'])
+def move():
+    global board, player
+    data = request.json
+    position = data['position']
+
+    if board[position] == "":
+        board[position] = player
+        if board.count("") == 0:
+            return jsonify({'board': board, 'player': player, 'message': "Tie"})
+        if (
+                (board[0] == player and board[1] == player and board[2] == player) or
+                (board[3] == player and board[4] == player and board[5] == player) or
+                (board[6] == player and board[7] == player and board[8] == player) or
+                (board[0] == player and board[3] == player and board[6] == player) or
+                (board[1] == player and board[4] == player and board[7] == player) or
+                (board[2] == player and board[5] == player and board[8] == player) or
+                (board[0] == player and board[4] == player and board[8] == player) or
+                (board[2] == player and board[4] == player and board[6] == player)
+        ):
+            board = [""] * 9
+            player = "X"
+            return jsonify({'board': board, 'player': player, 'message': "Won"})
+
+        player = "O" if player == "X" else "X"
+        return jsonify({'board': board, 'player': player, 'message': "Move made!"})
+    else:
+        return jsonify({'error': "Invalid move"}), 400
+
 
 if __name__ == '__main__':
     app.run(debug = True)
