@@ -5,9 +5,12 @@ db = SQLAlchemy()
 
 models.py
 from database import db
+from sqlalchemy import ForeignKey
+
 class Todo(db.Model):
     __tablename__ = 'todos'
-    tid = db.Column(db.Integer, primary_key = True)
+
+    tid = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String, nullable = False)
     completed = db.Column(db.Boolean, default = False)
 
@@ -21,13 +24,53 @@ class Todo(db.Model):
             'completed': self.completed
         }
 
+class Person(db.Model):
+    __tablename__ = 'people'
+
+    p_id = db.Column(db.Integer, primary_key=True)
+    p_name = db.Column(db.String, nullable=False)
+    p_age = db.Column(db.Integer)
+
+    def __init__(self, p_name, p_age):
+        self.p_name = p_name
+        self.p_age = p_age
+
+    def to_dict(self):
+        return {
+            'ID': self.p_id,
+            'Name': self.p_name,
+            'Age': self.p_age
+        }
+
+class Thing(db.Model):
+    __tablename__ = 'things'
+
+    t_id = db.Column(db.Integer, primary_key=True)
+    p_id = db.Column(db.Integer, ForeignKey('people.p_id', ondelete="CASCADE"), nullable=False)
+    t_name = db.Column(db.String, nullable=False)
+    t_price = db.Column(db.Float, nullable=False)
+    person = db.relationship("Person", backref=db.backref("things", cascade="all, delete-orphan", passive_deletes=True))
+
+    def __init__(self, t_name, t_price, p_id):
+        self.t_name = t_name
+        self.t_price = t_price
+        self.p_id = p_id
+
+    def to_dict(self):
+        return {
+            'ID': self.t_id,
+            'Name': self.t_name,
+            'Price': self.t_price,
+            'P_ID': self.p_id
+        }
+
 
 app.py
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from database import db
 from flask_migrate import Migrate
-from models import Todo
+from models import Todo, Person, Thing
 import requests
 import redis
 import json
@@ -35,18 +78,18 @@ import json
 app = Flask(__name__)
 CORS(app)
 
-postgres_db = 'postgres'
-postgres_user = 'postgres'
-postgres_password = 'Euphie017119#'
+postgres_db = ''
+postgres_user = ''
+postgres_password = ''
 postres_url = f'postgresql://{postgres_user}:{postgres_password}@localhost:5432/{postgres_db}'
 app.config['SQLALCHEMY_DATABASE_URI'] = postres_url
 
-WEATHER_API_KEY = '98037c962893437c82c34421240512'
+WEATHER_API_KEY = ''
 
 redis_client = redis.Redis(
-    host='redis-12367.c281.us-east-1-2.ec2.redns.redis-cloud.com',
-    port=12367,
-    password='cniChB2L7FwQ0zSchvzixuXZorJQaZmM'
+    host='',
+    port=,
+    password=''
 )
 
 board = [""] * 9
@@ -131,6 +174,82 @@ def move():
     else:
         return jsonify({'error': "Invalid move"}), 400
 
+@app.route('/person/add', methods=['POST'])
+def add_person():
+    try:
+        person_data = request.json
+        if not person_data or 'p_name' not in person_data or 'p_age' not in person_data:
+            return jsonify({'error': 'Invalid request. Name and age are required.'}), 400
+        person = Person(p_name=person_data['p_name'], p_age=int(person_data['p_age']))
+        db.session.add(person)
+        db.session.commit()
+        return jsonify({'Person': person.to_dict()}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/person/get_all', methods=['GET'])
+def get_all_people():
+    people = Person.query.all()
+    return jsonify({'People': [person.to_dict() for person in people]}), 200
+
+@app.route('/person/update/<int:p_id>', methods=['PUT'])
+def update_person(p_id):
+    person_data = request.json
+    person = Person.query.get_or_404(p_id)
+    if 'p_name' in person_data:
+        person.p_name = person_data['p_name']
+    if 'p_age' in person_data:
+        person.p_age = person_data['p_age']
+    db.session.commit()
+    return jsonify({"Person": person.to_dict()}), 200
+
+@app.route('/person/delete/<int:p_id>', methods=['DELETE'])
+def delete_person(p_id):
+    person = Person.query.get(p_id)
+    db.session.delete(person)
+    db.session.commit()
+    return jsonify({"Message": "Person Deleted Successfully"})
+
+@app.route('/thing/add', methods=['POST'])
+def add_thing():
+    try:
+        thing_data = request.json
+        if not thing_data or 't_name' not in thing_data or 't_price' not in thing_data or 'p_id' not in thing_data:
+            return jsonify({'error': 'Invalid request. Name, price, and person ID are required.'}), 400
+        person = Person.query.get(thing_data['p_id'])
+        if not person:
+            return jsonify({'error': f'Person with ID {thing_data["p_id"]} does not exist.'}), 404
+        thing = Thing(t_name=thing_data['t_name'], t_price=float(thing_data['t_price']), p_id=int(thing_data['p_id']))
+        db.session.add(thing)
+        db.session.commit()
+        return jsonify({'Thing': thing.to_dict()}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/thing/get_all', methods=['GET'])
+def get_all_things():
+    things = Thing.query.all()
+    return jsonify({'Things': [thing.to_dict() for thing in things]}), 200
+
+@app.route('/thing/update/<int:t_id>', methods=['PUT'])
+def update_thing(t_id):
+    thing_data = request.json
+    thing = Thing.query.get_or_404(t_id)
+    if 't_name' in thing_data:
+        thing.t_name = thing_data['t_name']
+    if 't_price' in thing_data:
+        thing.t_price = float(thing_data['t_price'])
+    if 'p_id' in thing_data:
+        thing.p_id = int(thing_data['p_id'])
+    db.session.commit()
+    return jsonify({'Thing': thing.to_dict()}), 200
+
+@app.route('/thing/delete/<int:t_id>', methods=['DELETE'])
+def delete_thing(t_id):
+    thing = Thing.query.get(t_id)
+    db.session.delete(thing)
+    db.session.commit()
+    return jsonify({"Message": "Thing Deleted Successfully"})
 
 if __name__ == '__main__':
     app.run(debug = True)
