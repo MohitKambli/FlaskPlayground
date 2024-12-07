@@ -1,68 +1,27 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
-const Todo = () => {
-    const [todos, setTodos] = useState([]);
-    const [newDescription, setNewDescription] = useState('');
-    const [editingId, setEditingId] = useState(null);
-    const [editDescription, setEditDescription] = useState('');
+const TicTacToe = () => {
+    const [board, setBoard] = useState(["","","","","","","","",""]);
+    const [player, setPlayer] = useState('X');
 
     const baseUrl = 'http://127.0.0.1:5000';
 
-    const fetchTodos = async () =>  {
+    const makeMove = async (index) => {
         try {
-            const response = await fetch(`${baseUrl}/todos`, {
-                method: 'GET',
-                headers: {"Content-Type": "application/json"}
-            })
-            const data = await response.json();
-            setTodos(data);
-            console.log(data);
-        } catch (e) {
-            console.log('Error: ', e);
-        }
-    }
-    useEffect(() => {
-        fetchTodos();
-    }, []);
-
-    const addTodo = async () => {
-        try {
-            const response = await fetch(`${baseUrl}/todos/add`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({"description": newDescription})
+            const response = await fetch(`${baseUrl}/move`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ position: index }),
             });
             const data = await response.json();
-            setTodos([...todos, data]);
-            setNewDescription("");
-        } catch(e) {
-            console.log("Error: ", e);
-        }
-    }
-
-    const deleteTodo = async (id) => {
-        try {
-            const response = await fetch(`${baseUrl}/todos/delete/${id}`, {
-                method: 'DELETE',
-                headers: {"Content-Type": "application/json"},
-            });
-            setTodos(todos.filter((todo) => todo.tid !== id));
-        } catch(e) {
-            console.log('Error: ', e);
-        }
-    }
-
-    const updateTodo = async (id) => {
-        try {
-            const response = await fetch(`${baseUrl}/todos/update/${id}`, {
-                method: 'PUT',
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({"description": editDescription})
-            });
-            const data = await response.json();
-            setTodos(todos.map((todo) => todo.tid === id ? data : todo));
-            setEditDescription("");
-            setEditingId(null);
+            setBoard(data.board);
+            setPlayer(data.player);
+            if(data.message === 'Won')
+                alert(data['player'] + ' Wins');
+            if(data.message === 'Tie')
+                alert('It is a tie');
         } catch(e) {
             console.log('Error: ', e);
         }
@@ -70,49 +29,22 @@ const Todo = () => {
 
     return (
         <div>
-            <div>
-                <input 
-                    type='text'
-                    value={newDescription}
-                    placeholder='Enter New Todo'
-                    onChange={(e) => setNewDescription(e.target.value)}
-                />
-                <button onClick={addTodo}>
-                    Add Todo
-                </button>
-            </div>
-            <ul>
+            <h1>Tic-Tac-Toe</h1>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 100px)", gap: "10px" }}>
                 {
-                    todos.map((todo) => (
-                        <li key={todo.tid}>
-                            {
-                                editingId === todo.tid ? (
-                                    <div>
-                                        <input 
-                                            type="text"
-                                            value={editDescription}
-                                            onChange={(e) => setEditDescription(e.target.value)}
-                                        />
-                                        <button onClick={() => updateTodo(todo.tid)}>Save</button>
-                                        <button onClick={() => setEditingId(null)}>Cancel</button>
-                                    </div>
-                                ) : (
-                                    <div>
-                                        <span>{todo.description}</span>
-                                        <button onClick={() => {
-                                            setEditingId(todo.tid);
-                                            setEditDescription(todo.description);
-                                        }}>Update</button>
-                                        <button onClick={() => deleteTodo(todo.tid)}>Delete</button>
-                                    </div>
-                                )
-                            }
-                        </li>
+                    board.map((cell, index) => (
+                        <button
+                            key={index}
+                            onClick={() => makeMove(index)}
+                            style={{ width: "100px", height: "100px", fontSize: "24px" }}
+                        >{cell}
+                        </button>
                     ))
                 }
-            </ul>
+            </div>
+            <h2>Current Player: {player}</h2>
         </div>
     );
 }
 
-export default Todo;
+export default TicTacToe;
