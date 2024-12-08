@@ -170,3 +170,119 @@ const TicTacToe = () => {
 }
 
 export default TicTacToe;
+
+
+
+
+import { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
+
+const Blog = () => {
+    const [blogs, setBlogs] = useState([]);
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const navigate = useNavigate();
+
+    const baseUrl = 'http://127.0.0.1:5000'
+    const fetchBlogs = async () => {
+        try {
+            const response = await fetch(`${baseUrl}/blogs/get_all`, {
+                method: 'GET',
+                headers: {'Content-Type': 'application/json'},
+            });
+            const data = await response.json()
+            setBlogs(data['Blogs'])
+        } catch (e) {
+            console.log('Exception: ', e);
+        }
+    }
+    const addBlog = async () => {
+        try {
+            const response = await fetch(`${baseUrl}/blogs/add`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({'b_title': title, 'b_description': description})
+            });
+            const data = await response.json();
+            console.log(data['Blog Added']);
+            setBlogs([...blogs, data['Blog Added']])
+            setTitle('');
+            setDescription('');
+        } catch(e) {
+            console.log('Exception: ', e);
+        } 
+    }
+    const deleteBlog = async (id) => {
+        try {
+            await fetch(`${baseUrl}/blogs/delete/${id}`, {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+            });
+            setBlogs(blogs.filter((blog) => blog.BlogID !== id));
+        } catch (e) {
+            console.log('Exception: ', e);
+        }
+    }
+
+    useEffect(() => {
+        fetchBlogs()
+    }, []);
+
+
+    return (
+        <div>
+            <div>
+                <input 
+                    type='text'
+                    placeholder="Enter Blog Title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                />
+                <input 
+                    type='text'
+                    placeholder="Enter Blog Description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                />
+                <button onClick={addBlog}>Add Blog</button>
+            </div>
+            <div>
+                <h3>Blogs</h3>
+                <ul>
+                    {
+                        blogs.map((blog) => (
+                            <li key={blog['BlogID']}>
+                                <div>
+                                    <span>{blog['Title']}</span>
+                                    <button onClick={() => deleteBlog(blog['BlogID'])}>Delete</button>
+                                    <button onClick={() => {navigate('/details', { state: blog });}}>View</button>
+                                </div>
+                            </li>
+                        ))
+                    }
+                </ul>
+            </div>
+        </div>
+    )
+}
+
+export default Blog;
+
+
+
+import { useLocation } from 'react-router-dom';
+
+const BlogDetailsPage = () => {
+    const location = useLocation();
+    const blog = location.state;
+
+    return (
+        <div>
+            <p>Blog ID: {blog.BlogID}</p>
+            <h1>{blog.Title}</h1>
+            <p>{blog.Description}</p>
+        </div>
+    )
+}
+
+export default BlogDetailsPage
