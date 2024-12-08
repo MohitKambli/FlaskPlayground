@@ -7,6 +7,7 @@ models.py
 from database import db
 from sqlalchemy import ForeignKey
 
+
 class Todo(db.Model):
     __tablename__ = 'todos'
 
@@ -64,13 +65,31 @@ class Thing(db.Model):
             'P_ID': self.p_id
         }
 
+class Blog(db.Model):
+    __tablename__ = 'blogs'
+
+    b_id = db.Column(db.Integer, primary_key = True)
+    b_title = db.Column(db.String, nullable = False)
+    b_description = db.Column(db.String, nullable = False)
+
+    def __init__(self, b_title, b_description):
+        self.b_title = b_title
+        self.b_description = b_description
+
+    def to_dict(self):
+        return {
+            'BlogID': self.b_id,
+            'Title': self.b_title,
+            'Description': self.b_description
+        }
+
 
 app.py
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from database import db
 from flask_migrate import Migrate
-from models import Todo, Person, Thing
+from models import Todo, Person, Thing, Blog
 import requests
 import redis
 import json
@@ -250,6 +269,43 @@ def delete_thing(t_id):
     db.session.delete(thing)
     db.session.commit()
     return jsonify({"Message": "Thing Deleted Successfully"})
+
+
+
+# CRUD for Blogs
+@app.route('/blogs/add', methods = ['POST'])
+def add_blog():
+    blog_data = request.json
+    blog = Blog(
+            b_title = blog_data['b_title'],
+            b_description = blog_data['b_description']
+    )
+    db.session.add(blog)
+    db.session.commit()
+    return jsonify({'Blog Added': blog.to_dict()})
+
+@app.route('/blogs/get_all', methods = ['GET'])
+def get_blogs():
+    blogs = Blog.query.all()
+    return jsonify({'Blogs': [blog.to_dict() for blog in blogs]})
+
+@app.route('/blogs/update/<int:b_id>', methods = ['PUT'])
+def update_blog(b_id):
+    blog_data = request.json
+    blog = Blog.query.get_or_404(b_id)
+    if 'b_title' in blog_data:
+        blog.b_title = blog_data['b_title']
+    if 'b_description' in blog_data:
+        blog.b_description = blog_data['b_description']
+    db.session.commit()
+    return jsonify({'Blog Updated': blog.to_dict()})
+
+@app.route('/blogs/delete/<int:b_id>', methods = ['DELETE'])
+def delete_blog(b_id):
+    blog = Blog.query.get_or_404(b_id)
+    db.session.delete(blog)
+    db.session.commit()
+    return jsonify({'Message': 'Blog Deleted Successfully'})
 
 if __name__ == '__main__':
     app.run(debug = True)
