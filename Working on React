@@ -286,3 +286,39 @@ const BlogDetailsPage = () => {
 }
 
 export default BlogDetailsPage
+
+
+
+
+
+import { useState } from "react";
+
+const Practise = () => {
+    const [file, setFile] = useState(null);
+
+    const handleUpload = async () => {
+        if(file === null)
+            alert('No Image File Found');
+        const formData = new FormData();
+        formData.append('file', file);
+        const baseUrl = 'http://127.0.0.1:5000';
+        try {
+            await fetch(`${baseUrl}/images/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            alert('Image Uploaded Successfully');
+        } catch(e) {
+            console.log('Error: ', e);
+        }
+    }
+
+    return (
+        <div>
+            <input type='file' onChange={(e) => setFile(e.target.files[0])} />
+            <button onClick={handleUpload}>Upload</button>
+        </div>
+    );
+}
+
+export default Practise;
