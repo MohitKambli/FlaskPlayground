@@ -93,6 +93,7 @@ from models import Todo, Person, Thing, Blog
 import requests
 import redis
 import json
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -113,6 +114,9 @@ redis_client = redis.Redis(
 
 board = [""] * 9
 player = 'X'
+
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 db.init_app(app)
 migrate = Migrate(app, db)
@@ -173,6 +177,8 @@ def move():
     if board[position] == "":
         board[position] = player
         if board.count("") == 0:
+            board = [""] * 9
+            player = "X"
             return jsonify({'board': board, 'player': player, 'message': "Tie"})
         if (
                 (board[0] == player and board[1] == player and board[2] == player) or
@@ -306,6 +312,25 @@ def delete_blog(b_id):
     db.session.delete(blog)
     db.session.commit()
     return jsonify({'Message': 'Blog Deleted Successfully'})
+
+
+# Upload URL
+@app.route('/images/upload', methods=['POST'])
+def upload_image():
+    file = request.files['file']
+    # file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    # file.save(file_path)
+    # return 'File Uploaded and Converted Successfully', 200
+
+    # Convert file to byte array
+    file_bytes = file.read()  # Reads the entire file as bytes
+    byte_array = list(file_bytes)  # Convert bytes to a byte array (optional)
+    # Save the byte array as a file (for demonstration)
+    with open(os.path.join(UPLOAD_FOLDER, file.filename + ".bin"), "wb") as f:
+        f.write(file_bytes)
+    # Return success response
+    return {"message": "File uploaded and converted to bytes!", "byte_array_sample": byte_array[:10]}, 200
+
 
 if __name__ == '__main__':
     app.run(debug = True)
