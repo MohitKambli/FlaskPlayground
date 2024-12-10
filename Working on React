@@ -322,3 +322,148 @@ const Practise = () => {
 }
 
 export default Practise;
+
+
+import { useState } from "react";
+
+const ShortenUrl = () => {
+    const [originalUrl, setOriginalUrl] = useState('');
+    const [shortUrl, setShortUrl] = useState('');
+
+    const baseUrl = 'http://127.0.0.1:5000';
+
+    const handleShorten = async () => {
+        try {
+            const response = await fetch(`${baseUrl}/urls/shorten`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({originalUrl: originalUrl})
+            });
+            const data = await response.json()
+            setShortUrl(`${baseUrl}/${data['short_url']}`);
+        } catch(e) {
+            console.log('Error: ', e);
+        }
+    }
+
+    return (
+        <div>
+            <input 
+                type='text'
+                placeholder="Enter original url"
+                value={originalUrl}
+                onChange={(e) => setOriginalUrl(e.target.value)}
+            />
+            <button onClick={handleShorten}>Shorten URL</button>
+            {
+                shortUrl && (
+                    <div>
+                        <h3>Shortened URL:</h3>
+                        <a href={shortUrl} target="_blank" rel="noopener noreferrer">
+                            {shortUrl}
+                        </a>
+                    </div>
+                )
+            }
+        </div>
+    );
+}
+
+export default ShortenUrl;
+
+
+
+import { useEffect, useState } from "react";
+
+const Author = () => {
+    const [authors, setAuthors] = useState([]);
+    const [newAuthorName, setNewAuthorName] = useState('');
+    const [newAuthorAge, setNewAuthorAge] = useState('');
+
+    const baseUrl = 'http://127.0.0.1:5000';
+
+    const addAuthor = async () => {
+        try {
+            const response = await fetch(`${baseUrl}/authors/add`, {
+                method: 'POST',
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({'author': {'a_name': newAuthorName, 'a_age': newAuthorAge}})
+            });
+            const data = await response.json();
+            console.log(data);
+            setAuthors([...authors, data['author']]);
+            setNewAuthorName(data['author']['a_name'])
+            setNewAuthorAge(data['author']['a_age'])
+        } catch(e) {
+            console.log('Error: ', e);
+        }
+    }
+
+    const fetchAuthors = async () => {
+        try {
+            const response = await fetch(`${baseUrl}/authors/get_all`, {
+                method: 'GET',
+                headers: {'Content-Type': 'application/json'}
+            });
+            const data = await response.json();
+            console.log(data);
+            setAuthors(data);
+        } catch(e) {
+            console.log('Error: ', e);
+        }
+    }
+
+    const deleteAuthor = async (a_id) => {
+        try {
+            await fetch(`${baseUrl}/authors/delete/${a_id}`, {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'}
+            });
+            setAuthors(authors.filter((author) => author.a_id !== a_id));
+        } catch(e) {
+            console.log('Error: ', e);
+        }
+    }
+
+    useEffect(() => {
+        fetchAuthors();
+    }, []);
+
+    return (
+        <div>
+            <div>
+                <input 
+                    type='text'
+                    placeholder="Enter author name"
+                    value={newAuthorName}
+                    onChange={(e) => setNewAuthorName(e.target.value)}
+                />
+                <input 
+                    type='number'
+                    placeholder="Enter author age"
+                    value={newAuthorAge}
+                    onChange={(e) => setNewAuthorAge(e.target.value)}
+                />
+                <button onClick={addAuthor}>Add Author</button>
+            </div>
+            <div>
+                <ul>
+                    {
+                        authors.map((author) => (
+                            <li key={author['a_id']}>
+                                <div>
+                                    <span>{author['a_name']}</span>
+                                    <button onClick={() => deleteAuthor(author['a_id'])}>Delete</button>
+                                </div>
+                            </li>
+                        ))
+                    }
+                </ul>
+            </div>
+        </div>
+    );
+}
+
+export default Author;
