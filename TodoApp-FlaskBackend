@@ -83,17 +83,77 @@ class Blog(db.Model):
             'Description': self.b_description
         }
 
+class Url(db.Model):
+    __tablename__ = 'urls'
+
+    u_id = db.Column(db.Integer, primary_key = True)
+    original_url = db.Column(db.String, nullable = False)
+    short_url = db.Column(db.String, nullable = False)
+
+    def __init__(self, original_url, short_url):
+        self.original_url = original_url
+        self.short_url = short_url
+
+    def to_dict(self):
+        return {
+            'u_id': self.u_id,
+            'original_url': self.original_url,
+            'short_url': self.short_url
+        }
+
+class Author(db.Model):
+    __tablename__ = 'authors'
+
+    a_id = db.Column(db.Integer, primary_key = True)
+    a_name = db.Column(db.String, nullable = False)
+    a_age = db.Column(db.Integer, nullable = False)
+
+    def __int__(self, a_name, a_age):
+        self.a_name = a_name
+        self.a_age = a_age
+
+    def to_dict(self):
+        return {
+            'a_id': self.a_id,
+            'a_name': self.a_name,
+            'a_age': self.a_age
+        }
+
+class Book(db.Model):
+    __tablename__ = 'books'
+
+    b_id = db.Column(db.Integer, primary_key = True)
+    b_name = db.Column(db.String, nullable = False)
+    b_price = db.Column(db.Float, nullable = False)
+    a_id = db.Column(db.Integer, ForeignKey('authors.a_id', ondelete="CASCADE"), nullable=False)
+    author = db.relationship("Author", backref=db.backref("books", cascade="all, delete-orphan", passive_deletes=True))
+
+    def __int__(self, b_name, b_price, a_id):
+        self.b_name = b_name
+        self.b_price = b_price
+        self.a_id = a_id
+
+    def to_dict(self):
+        return {
+            'b_id': self.b_id,
+            'b_name': self.b_name,
+            'b_price': self.b_price,
+            'a_id': self.a_id
+        }
+
+
 
 app.py
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect
 from flask_cors import CORS
 from database import db
 from flask_migrate import Migrate
-from models import Todo, Person, Thing, Blog
+from models import Todo, Person, Thing, Blog, Url, Author
 import requests
 import redis
 import json
 import os
+import string, random
 
 app = Flask(__name__)
 CORS(app)
@@ -331,6 +391,69 @@ def upload_image():
     # Return success response
     return {"message": "File uploaded and converted to bytes!", "byte_array_sample": byte_array[:10]}, 200
 
+
+
+# Shorten URL
+
+# Generate random short URL
+def generate_short_url():
+    characters = string.ascii_letters + string.digits
+    return ''.join(random.choices(characters, k=6))
+
+@app.route('/urls/shorten', methods = ['POST'])
+def shorten_url():
+    data = request.json
+    original_url = data['originalUrl']
+    url = Url.query.filter_by(original_url=original_url).first()
+    if url:
+        return jsonify({'short_url': url.short_url})
+    short_url = generate_short_url()
+    while Url.query.filter_by(short_url=short_url).first():
+        short_url = generate_short_url()
+    new_url = Url(original_url=original_url, short_url=short_url)
+    db.session.add(new_url)
+    db.session.commit()
+    return jsonify({'short_url': short_url})
+
+@app.route('/<short_url>', methods = ['GET'])
+def redirect_to_original_url(short_url):
+    url = Url.query.filter_by(short_url=short_url).first()
+    if url:
+        return redirect(url.original_url, code = 302)
+    return jsonify({'Message': 'No Corresponding URL Found'}), 404
+
+@app.route('/authors/add', methods = ['POST'])
+def add_author():
+    data = request.json
+    author_data = data['author']
+    author = Author(a_name=author_data['a_name'], a_age=author_data['a_age'])
+    db.session.add(author)
+    db.session.commit()
+    return jsonify({'author': author.to_dict()})
+
+@app.route('/authors/get_all', methods = ['GET'])
+def get_all_authors():
+    authors = Author.query.all()
+    return jsonify([author.to_dict() for author in authors])
+
+@app.route('/authors/delete/<int:a_id>', methods = ['DELETE'])
+def delete_author(a_id):
+    author = Author.query.get_or_404(a_id)
+    db.session.delete(author)
+    db.session.commit()
+    return jsonify({'Message': 'Author Deleted Successfully'})
+
+@app.route('/authors/update/<int:a_id>', methods = ['PUT'])
+def update_author(a_id):
+    data = request.json
+    author_data = data['author']
+    author = Author.query.get_or_404(a_id)
+    if 'a_name' in author_data:
+        author.a_name = author_data['a_name']
+    if 'a_age' in author_data:
+        author.a_age = author_data['a_age']
+    db.session.commit()
+    return jsonify({'Author Updated': author.to_dict()})
 
 if __name__ == '__main__':
     app.run(debug = True)
