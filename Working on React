@@ -621,3 +621,44 @@ const Question = () => {
 }
 
 export default Question;
+
+
+
+
+
+import {useState} from 'react';
+
+
+function Numbers() {
+    const [output, setOutput] = useState([]);
+    const [city, setCity] = useState('');
+    const [apiKey, setApiKey] = useState('');
+
+    const handleFetchWeather = async () => {
+        try {
+            const url = `http://127.0.0.1:5000/weather/${city}/${apiKey}`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            const ans = await response.json();
+            console.log(ans);
+            setOutput(ans);
+        } catch(e) {
+            console.log('Error: ', e);
+        }
+    }
+
+    return (
+        <div>
+            <input type='text' value={city} onChange={(e) => setCity(e.target.value)} placeholder='Enter City'/>
+            <input type='text' value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder='Enter API Key'/>
+            <button onClick={handleFetchWeather}>Fetch Weather</button>
+            <h2>Weather at {city}:</h2>
+            <p>{JSON.stringify(output, null, 2)}</p>
+        </div>
+    )
+}
+export default Numbers;
