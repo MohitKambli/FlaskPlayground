@@ -487,3 +487,137 @@ const Author = () => {
 }
 
 export default Author;
+
+
+
+import { useEffect, useState } from "react";
+
+const Question = () => {
+    const [questions, setQuestions] = useState([]);
+    const [editQuestion, setEditQuestion] = useState(null);
+    const [description, setDescription] = useState('');
+    const [marks, setMarks] = useState(0);
+
+    const baseUrl = 'http://127.0.0.1:5000'
+    const fetchQuestions = async () => {
+        try {
+            const response = await fetch(`${baseUrl}/questions/get_all`, {
+                method: 'GET',
+                headers: {'Content-Type': 'application/json'}
+            });
+            const data = await response.json();
+            setQuestions(data);
+            console.log(data);
+        } catch(e) {
+            console.log('Error: ', e);
+        }
+    }
+    const addQuestion = async () => {
+        try {
+            const response = await fetch(`${baseUrl}/questions/add`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({'question': {'q_description': description, 'q_marks': marks}})
+            });
+            const data = await response.json();
+            setQuestions([...questions, data['question']]);
+        } catch(e) {
+            console.log('Error: ', e);
+        }
+    }
+
+    const deleteQuestion = async (id) => {
+        try {
+            const response = await fetch(`${baseUrl}/questions/delete/${id}`, {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+            });
+            setQuestions(questions.filter((question) => question.q_id !== id));
+        } catch(e) {
+            console.log('Error: ', e);
+        }
+    }
+
+    const updateQuestion = async (id) => {
+        try {
+            const response = await fetch(`${baseUrl}/questions/update/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({'question': {'q_description': description, 'q_marks': marks}})
+            });
+            const data = await response.json();
+            const question_data = data['question'];
+            setQuestions(questions.map((question) => question.q_id === id ? question_data : question));
+            setDescription('');
+            setMarks(0);
+            setEditQuestion(null);
+        } catch (e) {
+            console.log('Exception: ', e);
+        }
+    }
+
+    useEffect(() => {
+        fetchQuestions();
+    }, []);
+
+    return (
+        <>
+            <div>
+                <input 
+                    type='text'
+                    value={description}
+                    placeholder='Enter Question Description'
+                    onChange={e => setDescription(e.target.value)}
+                />
+                <input 
+                    type='number'
+                    value={marks}
+                    placeholder='Enter Question Marks'
+                    onChange={e => setMarks(e.target.value)}
+                />
+                <button onClick={addQuestion}>Add Question</button>
+            </div>
+            {
+                <div>
+                    <ul>
+                        {
+                            questions.map((question) => (
+                                <li key={question.q_id}>
+                                    {
+                                        editQuestion === question.q_id ? (
+                                            <div>
+                                                <input 
+                                                    type='text'
+                                                    value={description}
+                                                    onChange={e => setDescription(e.target.value)}
+                                                />
+                                                <input 
+                                                    type='number'
+                                                    value={marks}
+                                                    onChange={e => setMarks(e.target.value)}
+                                                />
+                                                <button onClick={() => updateQuestion(question.q_id)}>Save</button>
+                                                <button onClick={() => setEditQuestion(null)}>Cancel</button>
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                <span>{question.q_description}</span>
+                                                <button onClick={() => {
+                                                    setEditQuestion(question.q_id);
+                                                    setDescription(question.q_description);
+                                                }}>Update</button>
+                                                <button onClick={() => deleteQuestion(question.q_id)}>Delete</button>
+                                            </div>
+                                        )
+                                    }
+                                </li>
+                            ))
+                        }
+                    </ul>
+                </div>
+            }
+        </>
+    );
+}
+
+export default Question;
