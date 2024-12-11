@@ -315,6 +315,7 @@ import { useState } from "react";
 
 const Practise = () => {
     const [file, setFile] = useState(null);
+    const [imageUrl, setImageUrl] = useState('');
 
     const handleUpload = async () => {
         if(file === null)
@@ -335,8 +336,20 @@ const Practise = () => {
 
     return (
         <div>
-            <input type='file' onChange={(e) => setFile(e.target.files[0])} />
-            <button onClick={handleUpload}>Upload</button>
+            {/* <input type='file' onChange={(e) => setFile(e.target.files[0])} />
+            <button onClick={handleUpload}>Upload</button> */}
+            <input type='text' value={imageUrl} onChange={(e) => {setImageUrl(e.target.value)}} />
+            <button onClick={async () => {
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(new Blob([blob]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', 'filtered_image.jpg');
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            }}>Download</button>
         </div>
     );
 }
