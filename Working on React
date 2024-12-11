@@ -123,8 +123,9 @@ export default Todo;
 import { useState } from "react";
 
 const TicTacToe = () => {
-    const [board, setBoard] = useState(["","","","","","","","",""]);
+    const [board, setBoard] = useState([]);
     const [player, setPlayer] = useState('X');
+    const [size, setSize] = useState(0);
 
     const baseUrl = 'http://127.0.0.1:5000';
 
@@ -135,13 +136,13 @@ const TicTacToe = () => {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ position: index }),
+                body: JSON.stringify({ position: index, size: size }),
             });
             const data = await response.json();
             setBoard(data.board);
             setPlayer(data.player);
             if(data.message === 'Won')
-                alert(data['player'] + ' Wins');
+                alert(data.winner + ' Wins');
             if(data.message === 'Tie')
                 alert('It is a tie');
         } catch(e) {
@@ -152,19 +153,38 @@ const TicTacToe = () => {
     return (
         <div>
             <h1>Tic-Tac-Toe</h1>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 100px)", gap: "10px" }}>
-                {
-                    board.map((cell, index) => (
-                        <button
-                            key={index}
-                            onClick={() => makeMove(index)}
-                            style={{ width: "100px", height: "100px", fontSize: "24px" }}
-                        >{cell}
-                        </button>
-                    ))
-                }
-            </div>
-            <h2>Current Player: {player}</h2>
+            {
+                board.length > 0 ?
+                (
+                    <div style={{ display: "grid", gridTemplateColumns: `repeat(${size}, 100px)`, gap: "10px" }}>
+                        {
+                            board.map((cell, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => makeMove(index)}
+                                    style={{ width: "100px", height: "100px", fontSize: "24px" }}
+                                >{cell}
+                                </button>
+                            ))
+                        }
+                        <h2>Current Player: {player}</h2>
+                    </div>
+                ):(
+                    <div>
+                        <input 
+                            type='number'
+                            placeholder="Enter size of board"
+                            value={size}
+                            onChange={e => setSize(Number(e.target.value))}
+                        />
+                        <button onClick={() => {
+                            const temp = Array(size * size).fill("");
+                            setBoard(temp);
+                        }
+                        }>Set Size</button>
+                    </div>
+                )
+            }
         </div>
     );
 }
