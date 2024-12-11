@@ -158,22 +158,23 @@ import string, random
 app = Flask(__name__)
 CORS(app)
 
-postgres_db = ''
-postgres_user = ''
-postgres_password = ''
+postgres_db = 'postgres'
+postgres_user = 'postgres'
+postgres_password = 'Euphie017119#'
 postres_url = f'postgresql://{postgres_user}:{postgres_password}@localhost:5432/{postgres_db}'
 app.config['SQLALCHEMY_DATABASE_URI'] = postres_url
 
-WEATHER_API_KEY = ''
+WEATHER_API_KEY = '98037c962893437c82c34421240512'
 
 redis_client = redis.Redis(
-    host='',
-    port=,
-    password=''
+    host='redis-12367.c281.us-east-1-2.ec2.redns.redis-cloud.com',
+    port=12367,
+    password='cniChB2L7FwQ0zSchvzixuXZorJQaZmM'
 )
 
-board = [""] * 9
+board = []
 player = 'X'
+size = 0
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -228,31 +229,59 @@ def find_weather(city, api_key):
     redis_client.setex(cache_key, 300, response.text)
     return response.json()
 
+def win_condition(board, player, size):
+    n = size
+    for i in range(n):
+        row_win = True
+        for j in range(n):
+            if board[i * n + j] != player:
+                row_win = False
+                break
+        if row_win:
+            return True
+    for i in range(n):
+        col_win = True
+        for j in range(n):
+            if board[j * n + i] != player:
+                col_win = False
+                break
+        if col_win:
+            return True
+    main_diagonal = True
+    for i in range(n):
+        if board[i * n + 1] != player:
+            main_diagonal = False
+            break
+    if main_diagonal:
+        return True
+    anti_diagonal = True
+    for i in range(n):
+        if board[i * n + (n - 1 - i)] != player:
+            anti_diagonal = False
+            break
+    if anti_diagonal:
+        return True
+
+
 @app.route('/move', methods=['POST'])
 def move():
-    global board, player
+    global board, player, size
     data = request.json
     position = data['position']
-
+    size = data['size']
+    if len(board) == 0:
+        board = [""] * size * size
     if board[position] == "":
         board[position] = player
         if board.count("") == 0:
-            board = [""] * 9
+            board = [""] * size * size
             player = "X"
             return jsonify({'board': board, 'player': player, 'message': "Tie"})
-        if (
-                (board[0] == player and board[1] == player and board[2] == player) or
-                (board[3] == player and board[4] == player and board[5] == player) or
-                (board[6] == player and board[7] == player and board[8] == player) or
-                (board[0] == player and board[3] == player and board[6] == player) or
-                (board[1] == player and board[4] == player and board[7] == player) or
-                (board[2] == player and board[5] == player and board[8] == player) or
-                (board[0] == player and board[4] == player and board[8] == player) or
-                (board[2] == player and board[4] == player and board[6] == player)
-        ):
-            board = [""] * 9
+        if win_condition(board, player, size):
+            board = [""] * size * size
+            winner = player
             player = "X"
-            return jsonify({'board': board, 'player': player, 'message': "Won"})
+            return jsonify({'board': board, 'winner': winner, 'player': player, 'message': "Won"})
 
         player = "O" if player == "X" else "X"
         return jsonify({'board': board, 'player': player, 'message': "Move made!"})
