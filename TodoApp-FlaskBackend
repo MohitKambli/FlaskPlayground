@@ -141,6 +141,23 @@ class Book(db.Model):
             'a_id': self.a_id
         }
 
+class Question(db.Model):
+    __tablename__ = 'questions'
+    
+    q_id = db.Column(db.Integer, primary_key = True)
+    q_description = db.Column(db.String, nullable = False)
+    q_marks = db.Column(db.Integer, nullable = False)
+    
+    def __int__(self, q_description, q_marks):
+        self.q_description = q_description
+        self.q_marks = q_marks
+    
+    def to_dict(self):
+        return {
+            'q_id': self.q_id,
+            'q_description': self.q_description,
+            'q_marks': self.q_marks
+        }
 
 
 app.py
@@ -483,6 +500,40 @@ def update_author(a_id):
         author.a_age = author_data['a_age']
     db.session.commit()
     return jsonify({'Author Updated': author.to_dict()})
+
+
+@app.route('/questions/get_all', methods = ['GET'])
+def get_all_questions():
+    questions = Question.query.all()
+    return jsonify([question.to_dict() for question in questions])
+
+@app.route('/questions/add', methods = ['POST'])
+def add_question():
+    data = request.json
+    question_data = data['question']
+    question = Question(q_description = question_data['q_description'], q_marks = question_data['q_marks'])
+    db.session.add(question)
+    db.session.commit()
+    return jsonify({'question': question.to_dict()})
+
+@app.route('/questions/delete/<int:q_id>', methods = ['DELETE'])
+def delete_question(q_id):
+    question = Question.query.get_or_404(q_id)
+    db.session.delete(question)
+    db.session.commit()
+    return jsonify({'message': 'Successfully Deleted'})
+
+@app.route('/questions/update/<int:q_id>', methods = ['PUT'])
+def update_question(q_id):
+    data = request.json
+    question_data = data['question']
+    question = Question.query.get_or_404(q_id)
+    if 'q_description' in question_data:
+        question.q_description = question_data['q_description']
+    if 'q_marks' in question_data:
+        question.q_marks = question_data['q_marks']
+    db.session.commit()
+    return jsonify({'question': question.to_dict()})
 
 if __name__ == '__main__':
     app.run(debug = True)
