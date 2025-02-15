@@ -230,3 +230,80 @@ logger.debug('This is a Debug message')
 logger.info('This is an Info message')
 '''
 
+
+
+
+
+'''
+# Doubly LinkedList
+class Node:
+    def __init__(self, val):
+        self.val = val
+        self.prev = None
+        self.next = None
+
+class ListNode:
+    def __init__(self):
+        self.head = None
+        self.tail = None
+
+    def __str__(self):
+        ans = ''
+        p = self.head
+        while p:
+            ans += f' {p.val} <->'
+            p = p.next
+        return ans
+
+    # Time Complexity: O(n)
+    def append(self, val: int):
+        if self.head is None and self.tail is None:
+            self.head = self.tail = Node(val)
+        else:
+            node = Node(val)
+            self.tail.next = node
+            node.prev = self.tail
+            self.tail = node
+
+    # Time Complexity: O(1)
+    def prepend(self, val):
+        if self.head is None and self.tail is None:
+            self.head = self.tail = Node(val)
+        else:
+            node = Node(val)
+            self.head.prev = node
+            node.next = self.head
+            self.head = node
+
+    def remove_front(self):
+        node = self.head
+        self.head = node.next
+        node.next = None
+        self.head.prev = None
+
+    def remove_rear(self):
+        node = self.tail
+        self.tail = node.prev
+        node.prev = None
+        self.tail.next = None
+
+    def __len__(self) -> int:
+        count = 0
+        p = self.head
+        while p:
+            count += 1
+            p = p.next
+        return count
+
+ll = ListNode()
+ll.append(10)
+ll.append(20)
+ll.append(30)
+ll.append(40)
+ll.append(1)
+ll.prepend(5)
+ll.remove_front()
+ll.remove_rear()
+print(ll)
+print(len(ll))
+'''
