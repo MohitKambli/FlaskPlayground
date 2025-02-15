@@ -247,11 +247,12 @@ class ListNode:
         self.head = None
         self.tail = None
 
+    # Time Complexity: O(n)
     def __str__(self):
         ans = ''
         p = self.head
         while p:
-            ans += f' {p.val} <->'
+            ans += f'<-> {p.val} <->'
             p = p.next
         return ans
 
@@ -275,18 +276,30 @@ class ListNode:
             node.next = self.head
             self.head = node
 
+    # Time Complexity: O(1)
     def remove_front(self):
+        if self.head is self.tail and self.head == self.tail:
+            self.head = None
+            self.tail = None
+            return
+
         node = self.head
         self.head = node.next
         node.next = None
         self.head.prev = None
 
+    # Time Complexity: O(1)
     def remove_rear(self):
+        if self.head is self.tail and self.head == self.tail:
+            self.head = None
+            self.tail = None
+            return
         node = self.tail
         self.tail = node.prev
         node.prev = None
         self.tail.next = None
 
+    # Time Complexity: O(n)
     def __len__(self) -> int:
         count = 0
         p = self.head
@@ -298,6 +311,8 @@ class ListNode:
 ll = ListNode()
 ll.append(10)
 ll.append(20)
+ll.remove_front()
+ll.remove_rear()
 ll.append(30)
 ll.append(40)
 ll.append(1)
