@@ -278,22 +278,30 @@ class ListNode:
 
     # Time Complexity: O(1)
     def remove_front(self):
-        if self.head is self.tail and self.head == self.tail:
+        if not self.head and not self.tail:
+            return AssertionError
+        if self.head and self.tail and self.head is self.tail and self.head.val == self.tail.val:
+            val = self.head.val
             self.head = None
             self.tail = None
-            return
+            return val
 
         node = self.head
         self.head = node.next
         node.next = None
         self.head.prev = None
+        return node.val
 
     # Time Complexity: O(1)
     def remove_rear(self):
-        if self.head is self.tail and self.head == self.tail:
+        if not self.head and not self.tail:
+            return AssertionError
+        if self.head and self.tail and self.head is self.tail and self.head.val == self.tail.val:
+            val = self.head.val
             self.head = None
             self.tail = None
-            return
+            return val
+
         node = self.tail
         self.tail = node.prev
         node.prev = None
@@ -321,4 +329,43 @@ ll.remove_front()
 ll.remove_rear()
 print(ll)
 print(len(ll))
+
+
+
+
+
+
+
+
+import pytest
+
+from linked_list import ListNode, Node
+
+@pytest.fixture
+def ll():
+    return ListNode()
+
+def test_append(ll):
+    ll.append(10)
+    ll.append(20)
+    assert ll.__len__() == 2
+
+def test_prepend(ll):
+    ll.prepend(10)
+    ll.prepend(20)
+    assert ll.__len__() == 2
+
+def test_remove_front(ll):
+    val = ll.remove_front()
+    assert val is AssertionError
+
+def test_remove_rear(ll):
+    ll.append(10)
+    val = ll.remove_rear()
+    assert val == 10
+
+def test__len__(ll):
+    ll.append(10)
+    assert ll.__len__() == 1
+
 '''
