@@ -266,6 +266,43 @@ print(dev_1.practise_coding())
 '''
 
 
+# Requests
+'''
+import requests
+url = 'https://api.agify.io?name=meelad'
+headers = {
+    'User-Agent': 'Test-1.0',
+    'Accept': 'application/json'
+}
+try:
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    data = response.json()
+    print(data)
+except Exception as e:
+    print('Exception: ', e)
+'''
+
+
+# DataClass
+'''
+from dataclasses import dataclass
+
+@dataclass()
+class Person:
+    name: str
+    age: int
+    salary: float
+    is_married: bool
+
+p1 = Person('Mohit', 26, 80000.00, False)
+print(p1)
+'''
+
+
+
+
+
 
 
 
@@ -407,3 +444,110 @@ def test__len__(ll):
     assert ll.__len__() == 1
 
 '''
+
+
+
+
+
+
+'''
+class Queue:
+    def __init__(self):
+        self.s1 = []
+        self.s2 = []
+
+    def enqueue(self, val: int) -> None:
+        self.s1.append(val)
+
+    def dequeue(self) -> int:
+        while self.s1:
+            self.s2.append(self.s1.pop())
+        value: int = self.s2.pop()
+        while self.s2:
+            self.s1.append(self.s2.pop())
+        return value
+
+    def queue_front(self):
+        if self.queue_size() == 0:
+            return IndexError
+        while self.s1:
+            self.s2.append(self.s1.pop())
+        value: int = self.s2[len(self.s2)-1]
+        while self.s2:
+            self.s1.append(self.s2.pop())
+        return value
+
+    def queue_rear(self):
+        if self.s1:
+            return self.s1[len(self.s1)-1]
+        return IndexError
+
+    def queue_size(self) -> int:
+        return len(self.s1)
+
+    def __str__(self):
+        while self.s1:
+            self.s2.append(self.s1.pop())
+        ans = ''
+        while self.s2:
+            value: int = self.s2.pop()
+            ans += str(value) + '->'
+            self.s1.append(value)
+        return ans
+
+q = Queue()
+q.enqueue(1)
+q.enqueue(2)
+q.enqueue(3)
+q.enqueue(4)
+print(q)
+print(f'Dequeue: {q.dequeue()}')
+print(f'Queue Front: {q.queue_front()}')
+print(f'Dequeue: {q.dequeue()}')
+print(f'Queue Front: {q.queue_front()}')
+print(q)
+'''
+
+
+
+
+'''
+import pytest
+
+from queue import Queue
+
+@pytest.fixture()
+def q():
+    return Queue()
+
+def test_enqueue(q):
+    q.enqueue(10)
+    q.enqueue(20)
+    q.enqueue(30)
+    assert q.queue_size() == 3
+
+def test_queue_rear(q):
+    q.enqueue(10)
+    q.enqueue(20)
+    q.enqueue(30)
+    assert q.queue_rear() == 30
+
+def test_dequeue(q):
+    q.enqueue(10)
+    q.enqueue(20)
+    q.enqueue(30)
+    assert q.dequeue() == 10 and q.queue_size() == 2
+
+def test_queue_front(q):
+    assert q.queue_front() == IndexError and q.queue_size() == 0
+'''
+
+
+
+
+
+
+
+
+
+
