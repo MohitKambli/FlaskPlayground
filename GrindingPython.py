@@ -231,6 +231,44 @@ logger.info('This is an Info message')
 '''
 
 
+# Inheritance
+'''
+class Employee:
+    def __init__(self, name, age, salary) -> None:
+        self.name = name
+        self.age = age
+        self.salary = salary
+
+    def __str__(self) -> str:
+        return f'Name: {self.name}, Age: {self.age}, Salary: {self.salary}'
+
+    @staticmethod
+    def help_parents() -> str:
+        return 'Help Parents'
+
+class Developer(Employee):
+    def __init__(self, name, age, salary, programming_languages) -> None:
+        super().__init__(name, age, salary)
+        self.programming_languages = programming_languages
+
+    def __str__(self) -> str:
+        return f'{super().__str__()}, Programming Languages: {", ".join(self.programming_languages)}'
+
+    def practise_coding(self) -> str:
+        ans: str = 'Working on: '
+        ans = ans + ', '.join(self.programming_languages)
+        return ans
+
+dev_1 = Developer('Mohit', 27, 80000, ['Python', 'Java', 'JavaScript'])
+print(dev_1)
+print(dev_1.help_parents())
+print(dev_1.practise_coding())
+'''
+
+
+
+
+
 
 
 
