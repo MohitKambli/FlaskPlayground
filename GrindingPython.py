@@ -300,6 +300,24 @@ print(p1)
 '''
 
 
+# Falcon
+'''
+import falcon
+from waitress import serve
+
+class MyApp:
+    def on_get(self, req, resp):
+        resp.text = 'Hello World'
+        resp.status = falcon.HTTP_OK
+
+api = falcon.App()
+api.add_route('/', MyApp())
+
+if __name__ == '__main__':
+    print(f'Server running on port 8001')
+    serve(api, host='127.0.0.1', port=8001)
+'''
+
 
 
 
